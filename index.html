@@ -3,47 +3,94 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
   <title>Geometry Dash</title>
   
-  <!-- Das lädt die Engine -->
+  <!-- WICHTIG: Die Engine von aussen laden -->
   <script src="https://turbowarp.org"></script>
 
   <style>
-    body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
-    #app { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
-    #loading { z-index: 1; }
-    .progress-bar { border: 1px solid #fff; width: 200px; height: 10px; }
-    #progress-fill { background: #fff; width: 0%; height: 100%; }
+    /* Das Original-Design der ersten Index */
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+    }
+    #app, #loading, #error {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .loading-text {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    #error { display: none; color: #ff4444; }
   </style>
 </head>
 <body>
 
   <div id="app"></div>
 
-  <div id="loading" class="screen">
-    <div style="margin-bottom: 10px;">Geometry Dash wird geladen...</div>
-    <div class="progress-bar"><div id="progress-fill"></div></div>
+  <div id="loading">
+    <div class="loading-text">Loading...</div>
+    <div class="progress-bar-outer">
+      <div id="progress-bar" class="progress-bar-inner"></div>
+    </div>
+  </div>
+
+  <div id="error">
+    <h1>Error</h1>
+    <div id="error-message"></div>
   </div>
 
   <script>
     const scaffolding = new Scaffolding.Runtime();
     scaffolding.setupTarget(document.getElementById('app'));
     
-    // Fortschrittsanzeige
-    scaffolding.addEventListener('loadprogress', (p) => {
-      document.getElementById('progress-fill').style.width = (p * 100) + '%';
+    const progressBar = document.getElementById('progress-bar');
+
+    scaffolding.addEventListener('loadprogress', (progress) => {
+      progressBar.style.width = (progress * 100) + '%';
     });
 
-    // Automatischer Start nach Laden
     scaffolding.addEventListener('load', () => {
       document.getElementById('loading').style.display = 'none';
       scaffolding.start();
     });
 
-    // Lade die project.json Datei direkt über den Scaffolding-Loader
-    // Das ist sicherer als ein manueller 'fetch'
-    scaffolding.loadProjectFromURL('project.json');
+    // Diese Methode ist am sichersten für Dateien im selben Repo
+    fetch('./project.json')
+      .then(r => {
+        if (!r.ok) throw new Error('project.json nicht gefunden (404)');
+        return r.arrayBuffer();
+      })
+      .then(data => scaffolding.loadProject(data))
+      .catch(err => {
+        document.getElementById('error').style.display = 'flex';
+        document.getElementById('error-message').innerText = err.message;
+        console.error(err);
+      });
   </script>
 
 </body>
