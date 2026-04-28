@@ -3,88 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
-  <title>Geometry Dash - Local</title>
+  <title>Geometry Dash</title>
   
-  <!-- Wir laden die Engine trotzdem von hier, damit du keine extra JS-Datei im Repo brauchst -->
+  <!-- Das lädt die Engine -->
   <script src="https://turbowarp.org"></script>
 
   <style>
-    body {
-      color: #ffffff;
-      font-family: sans-serif;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
-      background-color: #000000;
-    }
-    #app, #loading, #error {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .progress-bar-outer {
-      border: 2px solid white;
-      height: 20px;
-      width: 250px;
-      margin-top: 10px;
-    }
-    .progress-bar-inner {
-      height: 100%;
-      width: 0%;
-      background-color: white;
-    }
-    #error { display: none; background: rgba(255,0,0,0.5); }
-    canvas { display: block; }
+    body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
+    #app { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    #loading { z-index: 1; }
+    .progress-bar { border: 1px solid #fff; width: 200px; height: 10px; }
+    #progress-fill { background: #fff; width: 0%; height: 100%; }
   </style>
 </head>
 <body>
 
   <div id="app"></div>
 
-  <div id="loading">
-    <div class="loading-text">Lade lokale Dateien...</div>
-    <div class="progress-bar-outer"><div id="progress-bar" class="progress-bar-inner"></div></div>
-  </div>
-
-  <div id="error">
-    <h1>Fehler beim Laden</h1>
-    <div id="error-message"></div>
+  <div id="loading" class="screen">
+    <div style="margin-bottom: 10px;">Geometry Dash wird geladen...</div>
+    <div class="progress-bar"><div id="progress-fill"></div></div>
   </div>
 
   <script>
     const scaffolding = new Scaffolding.Runtime();
     scaffolding.setupTarget(document.getElementById('app'));
     
-    const progressBar = document.getElementById('progress-bar');
-    const loadingScreen = document.getElementById('loading');
-
-    scaffolding.addEventListener('loadprogress', (progress) => {
-      progressBar.style.width = (progress * 100) + '%';
+    // Fortschrittsanzeige
+    scaffolding.addEventListener('loadprogress', (p) => {
+      document.getElementById('progress-fill').style.width = (p * 100) + '%';
     });
 
-    // Diese Funktion lädt deine lokale project.json aus dem Repo
-    const loadLocalProject = async () => {
-      try {
-        const response = await fetch('project.json');
-        const projectData = await response.arrayBuffer();
-        await scaffolding.loadProject(projectData);
-        
-        loadingScreen.style.display = 'none';
-        scaffolding.start();
-      } catch (err) {
-        document.getElementById('error').style.display = 'flex';
-        document.getElementById('error-message').innerText = "Konnte project.json nicht finden oder laden: " + err;
-      }
-    };
+    // Automatischer Start nach Laden
+    scaffolding.addEventListener('load', () => {
+      document.getElementById('loading').style.display = 'none';
+      scaffolding.start();
+    });
 
-    loadLocalProject();
+    // Lade die project.json Datei direkt über den Scaffolding-Loader
+    // Das ist sicherer als ein manueller 'fetch'
+    scaffolding.loadProjectFromURL('project.json');
   </script>
 
 </body>
